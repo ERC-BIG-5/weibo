@@ -7,10 +7,7 @@ from datetime import datetime, timedelta, date
 from pathlib import Path
 from typing import Optional
 
-input_folder = Path("data/input")
-output_folder = Path("data/output")
-process = Path("data/process")
-missing_folder = Path("data/missing")
+from consts import output_folder, process, missing_folder, input_folder
 
 output_folder.mkdir(exist_ok=True)
 process.mkdir(exist_ok=True)
@@ -44,10 +41,10 @@ def create_dict_state_for_year(year: int) -> dict[str,dict[dict[str,bool]]]:
             month_state.setdefault(day, {hour: False for hour in range(24)})
     return state
 
-def main():
+def run_filter():
     # ITERATE THROUGH ALL CSV FILES AND COLLECT THE EARLIERST FOR EACH HOUR
     collected_years = set()
-    for csv_file in input_folder.glob("*.csv"):
+    for csv_file in input_folder.glob("*/*.csv"):
         # COLLECT
         calendar_sorted_posts = {}
         reader = csv.DictReader(csv_file.open())
@@ -113,6 +110,6 @@ def get_missing_for_range(start: datetime, end: datetime) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run_filter()
     # get_missing_for_year(2023, 7)
     get_missing_for_range(datetime(year=2023, month=6, day=1), datetime(year=2023, month=12, day=3))
