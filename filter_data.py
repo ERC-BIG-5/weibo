@@ -23,6 +23,7 @@ global_state_dict_file = process / "state_d.json"
 if global_state_dict_file.exists():
     global_state_dict = json.load(global_state_dict_file.open())
 
+
 def create_state_for_year(year: int) -> list[list[list[bool]]]:
     state = []
     for month in range(1, 13):
@@ -32,26 +33,43 @@ def create_state_for_year(year: int) -> list[list[list[bool]]]:
             month_state.append([False for _ in range(24)])
     return state
 
-def create_dict_state_for_year(year: int) -> dict[str,dict[dict[str,bool]]]:
+
+def create_dict_state_for_year(year: int) -> dict[str, dict[dict[str, bool]]]:
     state = {}
     for month in range(1, 13):
-        m_str = date(year,month,1).strftime("%b").lower()
+        m_str = date(year, month, 1).strftime("%b").lower()
         month_state = state.setdefault(m_str, {})
         for day in range(1, calendar.monthrange(year, month)[1]):
             month_state.setdefault(day, {hour: False for hour in range(24)})
     return state
 
+
+def get_datetime(datetime_: str) -> datetime:
+
+    try:
+        return datetime.strptime(datetime_, "%Y-%m-%d %H:%M")
+    except ValueError as e:
+        date_, time_ = datetime_.split(" ")
+        hour_, minute_ = time_.split(":")
+        proper_hour = hour_.rjust(2, "0")
+        fixed_dt = f"{date_} {proper_hour}:{minute_}"
+        return datetime.strptime(fixed_dt, "%Y-%m-%d %H:%M")
+
+
 def run_filter():
     # ITERATE THROUGH ALL CSV FILES AND COLLECT THE EARLIERST FOR EACH HOUR
     collected_years = set()
-    for csv_file in input_folder.glob("*/*.csv"):
+    for csv_file in input_folder.glob("*.csv"):
+        print(csv_file)
         # COLLECT
         calendar_sorted_posts = {}
         reader = csv.DictReader(csv_file.open())
+        # reader = csv.reader(csv_file.open())
         for line in reader:
             # print(line)
+            # print(line)
             # print(line["发布时间"])
-            dt = datetime.strptime(line["发布时间"], "%Y-%m-%d %H:%M")
+            dt = get_datetime(line["发布时间"])
             # print(dt.month, dt.day, dt.hour)
             c_year = calendar_sorted_posts.setdefault(dt.year, {})
             c_month = c_year.setdefault(dt.month, {})
@@ -88,6 +106,7 @@ def run_filter():
     json.dump(global_state, global_state_file.open("w"))
     json.dump(global_state_dict, global_state_dict_file.open("w"))
 
+
 def get_missing_for_year(year: int, month: Optional[int] = None) -> None:
     year_data = global_state[str(year)]
     for month_idx, month_data in enumerate(year_data):
@@ -105,7 +124,7 @@ def get_missing_for_range(start: datetime, end: datetime) -> None:
     cur_dt = copy(start)
     while cur_dt <= end:
         cur_dt += timedelta(hours=1)
-        if not global_state[str(cur_dt.year)][cur_dt.month - 1][cur_dt.day -1][cur_dt.hour]:
+        if not global_state[str(cur_dt.year)][cur_dt.month - 1][cur_dt.day - 1][cur_dt.hour]:
             print(cur_dt.strftime("%Y-%m-%d %H:%M"))
 
 
