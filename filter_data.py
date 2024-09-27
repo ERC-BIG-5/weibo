@@ -64,30 +64,37 @@ def run_filter():
         print(csv_file)
         # COLLECT
         calendar_sorted_posts = {}
-        reader = csv.DictReader(csv_file.open(encoding="utf-8"))
-        #reader = csv.reader(csv_file.open(encoding="utf-8"))
-        for line in reader:
-            #print(line)
-            # print(line)
-            # print(line["发布时间"])
-            dt = get_datetime(line["发布时间"])
-            # print(dt.month, dt.day, dt.hour)
-            c_year = calendar_sorted_posts.setdefault(dt.year, {})
-            c_month = c_year.setdefault(dt.month, {})
-            c_day = c_month.setdefault(dt.day, {})
-            if dt.hour not in c_day:
-                c_day[dt.hour] = (dt, line)
-            elif dt < c_day[dt.hour][0]:
-                c_day[dt.hour] = (dt, line)
-            collected_years.add(dt.year)
-
+        # reader = csv.DictReader(csv_file.open(encoding="utf-8"))
+        reader = csv.reader(csv_file.open(encoding="utf-8"))
+        header = next(reader)
+        while True:
+            try:
+                line = next(reader)
+                lined = dict(zip(header,line))
+                # print(lined)
+                # print(line["发布时间"])
+                dt = get_datetime(lined["发布时间"])
+                # print(dt.month, dt.day, dt.hour)
+                c_year = calendar_sorted_posts.setdefault(dt.year, {})
+                c_month = c_year.setdefault(dt.month, {})
+                c_day = c_month.setdefault(dt.day, {})
+                if dt.hour not in c_day:
+                    c_day[dt.hour] = (dt, lined)
+                elif dt < c_day[dt.hour][0]:
+                    c_day[dt.hour] = (dt, lined)
+                collected_years.add(dt.year)
+            except StopIteration:
+                break
+            except Exception as e:
+                print(e)
+                continue
         # create state list if the year is missing
         for year in collected_years:
             if str(year) not in global_state:
                 global_state[str(year)] = create_state_for_year(year)
                 global_state_dict[str(year)] = (create_dict_state_for_year(year))
 
-        fieldnames = ["date", "hour"] + list(reader.fieldnames)
+        fieldnames = ["date", "hour"] + list(header)
         fieldnames[2] = 'id'
         #print(fieldnames)
         writer = csv.DictWriter(output_folder.joinpath(csv_file.stem + "_auto_filtered.csv").open("w"), fieldnames)
